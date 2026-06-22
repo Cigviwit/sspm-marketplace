@@ -1,84 +1,47 @@
-export const isFirebaseConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
+import * as firebase from './firebase';
 
-let firebasePromise;
+export const isFirebaseConfigured = firebase.isFirebaseConfigured;
 
-function loadFirebase() {
-  if (!firebasePromise) {
-    firebasePromise = import('./firebase');
-  }
-  return firebasePromise;
-}
+export const subscribeToListings = (callback) => {
+  return firebase.subscribeToListings(callback);
+};
 
-function createDeferredSubscription(subscribe) {
-  let unsubscribe = null;
-  let cancelled = false;
-
-  loadFirebase().then((firebase) => {
-    if (cancelled) return;
-    unsubscribe = subscribe(firebase);
-    if (cancelled && unsubscribe) unsubscribe();
-  });
-
-  return () => {
-    cancelled = true;
-    if (unsubscribe) unsubscribe();
-  };
-}
-
-export const subscribeToListings = (callback) => createDeferredSubscription(
-  (firebase) => firebase.subscribeToListings(callback),
-);
-
-export const subscribeToAuthChanges = (callback) => createDeferredSubscription(
-  (firebase) => firebase.subscribeToAuthChanges(callback),
-);
+export const subscribeToAuthChanges = (callback) => {
+  return firebase.subscribeToAuthChanges(callback);
+};
 
 export const getCurrentUser = async () => {
-  const { auth } = await loadFirebase();
-  return auth.currentUser;
+  return firebase.auth ? firebase.auth.currentUser : null;
 };
 
-export const getUserProfile = async (...args) => {
-  const { getUserProfile: fn } = await loadFirebase();
-  return fn(...args);
+export const getUserProfile = (...args) => {
+  return firebase.getUserProfile(...args);
 };
 
-export const saveUserProfile = async (...args) => {
-  const { saveUserProfile: fn } = await loadFirebase();
-  return fn(...args);
+export const saveUserProfile = (...args) => {
+  return firebase.saveUserProfile(...args);
 };
 
-export const createListing = async (...args) => {
-  const { createListing: fn } = await loadFirebase();
-  return fn(...args);
+export const createListing = (...args) => {
+  return firebase.createListing(...args);
 };
 
-export const deleteListing = async (...args) => {
-  const { deleteListing: fn } = await loadFirebase();
-  return fn(...args);
+export const deleteListing = (...args) => {
+  return firebase.deleteListing(...args);
 };
 
-export const updateListing = async (...args) => {
-  const { updateListing: fn } = await loadFirebase();
-  return fn(...args);
+export const updateListing = (...args) => {
+  return firebase.updateListing(...args);
 };
 
-export const uploadListingImage = async (...args) => {
-  const { uploadListingImage: fn } = await loadFirebase();
-  return fn(...args);
+export const uploadListingImage = (...args) => {
+  return firebase.uploadListingImage(...args);
 };
 
-export const logoutUser = async (...args) => {
-  const { logoutUser: fn } = await loadFirebase();
-  return fn(...args);
+export const logoutUser = (...args) => {
+  return firebase.logoutUser(...args);
 };
 
-export const seedListingsIfEmpty = async (...args) => {
-  const { seedListingsIfEmpty: fn } = await loadFirebase();
-  return fn(...args);
-};
-
-export const signInWithGoogle = async (...args) => {
-  const { signInWithGoogle: fn } = await loadFirebase();
-  return fn(...args);
+export const signInWithGoogle = (...args) => {
+  return firebase.signInWithGoogle(...args);
 };
