@@ -27,7 +27,6 @@ import {
 } from 'firebase/storage';
 import { INITIAL_LISTINGS } from './data';
 
-
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -37,18 +36,25 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const isFirebaseConfigured = !!firebaseConfig.apiKey;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// Initialize Firebase conditionally
+const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+
+const googleProvider = app ? new GoogleAuthProvider() : null;
+if (googleProvider) {
+  googleProvider.setCustomParameters({ prompt: 'select_account' });
+}
 
 // Auth Functions
 export const signInWithGoogle = async () => {
+  if (!isFirebaseConfigured || !auth || !googleProvider) {
+    throw new Error("Firebase is not configured.");
+  }
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
@@ -58,13 +64,18 @@ export const signInWithGoogle = async () => {
   }
 };
 
-export const logoutUser = () => signOut(auth);
+export const logoutUser = () => {
+  if (auth) return signOut(auth);
+};
 
-export const subscribeToAuthChanges = (callback) => onAuthStateChanged(auth, callback);
+export const subscribeToAuthChanges = (callback) => {
+  if (auth) return onAuthStateChanged(auth, callback);
+  return () => {};
+};
 
 // Firestore User Functions
 export const getUserProfile = async (email) => {
-  if (!email) return null;
+  if (!db || !email) return null;
   const userDocRef = doc(db, 'users', email.toLowerCase());
   const userSnapshot = await getDoc(userDocRef);
   if (userSnapshot.exists()) {
@@ -74,7 +85,7 @@ export const getUserProfile = async (email) => {
 };
 
 export const saveUserProfile = async (email, profileData) => {
-  if (!email) return;
+  if (!db || !email) return;
   const userDocRef = doc(db, 'users', email.toLowerCase());
   await setDoc(userDocRef, {
     ...profileData,
@@ -85,6 +96,7 @@ export const saveUserProfile = async (email, profileData) => {
 
 // Firestore Listings Functions
 export const getListings = async () => {
+  if (!db) return [];
   const listingsColRef = collection(db, 'listings');
   const q = query(listingsColRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
@@ -95,6 +107,7 @@ export const getListings = async () => {
 };
 
 export const createListing = async (listingData) => {
+  if (!db) return null;
   const listingsColRef = collection(db, 'listings');
   const docRef = await addDoc(listingsColRef, {
     ...listingData,
@@ -104,18 +117,20 @@ export const createListing = async (listingData) => {
 };
 
 export const deleteListing = async (listingId) => {
+  if (!db) return;
   const listingDocRef = doc(db, 'listings', listingId);
   await deleteDoc(listingDocRef);
 };
 
 export const updateListing = async (listingId, updateData) => {
+  if (!db) return;
   const listingDocRef = doc(db, 'listings', listingId);
   await setDoc(listingDocRef, updateData, { merge: true });
 };
 
 // Storage Image Upload
 export const uploadListingImage = async (base64String, fileName) => {
-  if (!base64String) return null;
+  if (!storage || !base64String) return null;
   
   try {
     // Clean file name
@@ -136,6 +151,7 @@ export const uploadListingImage = async (base64String, fileName) => {
 
 // Subscribe to real-time listings changes
 export const subscribeToListings = (callback) => {
+  if (!db) return () => {};
   const listingsColRef = collection(db, 'listings');
   const q = query(listingsColRef, orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
@@ -151,6 +167,7 @@ export const subscribeToListings = (callback) => {
 
 // Seed listings if Firestore is empty
 export const seedListingsIfEmpty = async () => {
+  if (!db) return;
   try {
     const listingsColRef = collection(db, 'listings');
     const snapshot = await getDocs(listingsColRef);

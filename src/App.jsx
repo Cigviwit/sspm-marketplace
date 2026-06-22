@@ -11,6 +11,7 @@ import {
   uploadListingImage,
   logoutUser,
   subscribeToAuthChanges,
+  isFirebaseConfigured,
 } from './firebaseClient';
 
 const Feed = lazy(() => import('./views/Feed'));
@@ -82,6 +83,7 @@ export default function App() {
   }, [prevView]);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) return;
     const unsubscribe = subscribeToListings((newListings) => {
       setListings(newListings);
     });
@@ -91,6 +93,7 @@ export default function App() {
 
 
   useEffect(() => {
+    if (!isFirebaseConfigured) return;
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -316,6 +319,33 @@ export default function App() {
   ));
 
   const noNav = ['detail', 'auth-gate', 'onboarding', 'sell'].includes(view);
+
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f5ef] px-4 font-sans text-gray-900">
+        <div className="w-full max-w-md rounded-xl border border-primary/10 bg-white p-6 shadow-xl md:p-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 text-red-600 mb-4">
+            <ShieldCheck size={24} className="stroke-[2.5]" />
+          </div>
+          <h2 className="text-xl font-black text-[#123c36]">Configuration Required</h2>
+          <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+            The Firebase environment variables are missing. Since <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-red-600 font-semibold">.env</code> is ignored in Git for security, you need to configure these variables in your Vercel deployment settings.
+          </p>
+          <div className="mt-4 rounded-lg bg-gray-50 p-4 text-xs font-semibold font-mono text-gray-600 space-y-1">
+            <p>VITE_FIREBASE_API_KEY</p>
+            <p>VITE_FIREBASE_AUTH_DOMAIN</p>
+            <p>VITE_FIREBASE_PROJECT_ID</p>
+            <p>VITE_FIREBASE_STORAGE_BUCKET</p>
+            <p>VITE_FIREBASE_MESSAGING_SENDER_ID</p>
+            <p>VITE_FIREBASE_APP_ID</p>
+          </div>
+          <p className="mt-4 text-xs font-medium text-gray-500">
+            Once added, trigger a redeployment in Vercel to apply the changes.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loadingAuth) {
     return (

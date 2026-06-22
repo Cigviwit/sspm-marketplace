@@ -1,3 +1,5 @@
+export const isFirebaseConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
+
 let firebasePromise;
 
 function loadFirebase() {
