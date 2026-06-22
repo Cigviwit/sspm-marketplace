@@ -3,6 +3,7 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -59,6 +60,11 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error) {
+    if (error.code === 'auth/popup-blocked') {
+      console.warn("Popup blocked, falling back to redirect sign-in...");
+      await signInWithRedirect(auth, googleProvider);
+      return;
+    }
     console.error("Error during Google Sign-In:", error);
     throw error;
   }

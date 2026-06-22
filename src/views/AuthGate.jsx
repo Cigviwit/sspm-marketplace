@@ -7,10 +7,11 @@ export default function AuthGate({ onBack }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleGoogleSignIn = async () => {
-    setIsAuthenticating(true);
     setErrorMsg('');
     try {
-      await signInWithGoogle();
+      const signInPromise = signInWithGoogle();
+      setIsAuthenticating(true);
+      await signInPromise;
     } catch (error) {
       console.error('Google login failed:', error);
       setErrorMsg(error.message || 'Google Sign-In failed. Please try again.');
