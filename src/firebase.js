@@ -44,7 +44,7 @@ const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-export const storage = app ? getStorage(app) : null;
+export const storage = app ? getStorage(app, `gs://${firebaseConfig.storageBucket}`) : null;
 
 const googleProvider = app ? new GoogleAuthProvider() : null;
 if (googleProvider) {
@@ -138,13 +138,20 @@ export const updateListing = async (listingId, updateData) => {
 export const uploadListingImage = async (base64String, fileName) => {
   if (!storage || !base64String) return null;
   
+  const UPLOAD_TIMEOUT_MS = 15000;
+
   try {
     // Clean file name
     const cleanName = `${Date.now()}_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const storageRef = ref(storage, `listings/${cleanName}`);
+
+    // Race the upload against a timeout so a silent hang never blocks the form
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Upload timed out')), UPLOAD_TIMEOUT_MS)
+    );
     
     // Upload base64 string
-    await uploadString(storageRef, base64String, 'data_url');
+    await Promise.race([uploadString(storageRef, base64String, 'data_url'), timeoutPromise]);
     
     // Get download URL
     const downloadUrl = await getDownloadURL(storageRef);
