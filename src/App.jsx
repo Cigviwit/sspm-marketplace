@@ -12,6 +12,7 @@ import {
   logoutUser,
   subscribeToAuthChanges,
   isFirebaseConfigured,
+  handleRedirectResult,
 } from './firebaseClient';
 
 const Feed = lazy(() => import('./views/Feed'));
@@ -94,6 +95,10 @@ export default function App() {
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
+
+    // Complete any pending redirect sign-in (e.g. from signInWithRedirect)
+    handleRedirectResult();
+
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
       if (firebaseUser) {
         try {

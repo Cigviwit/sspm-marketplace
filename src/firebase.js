@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -60,13 +61,25 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error) {
-    if (error.code === 'auth/popup-blocked') {
-      console.warn("Popup blocked, falling back to redirect sign-in...");
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+      console.warn("Popup blocked or closed, falling back to redirect sign-in...");
       await signInWithRedirect(auth, googleProvider);
       return;
     }
     console.error("Error during Google Sign-In:", error);
     throw error;
+  }
+};
+
+// Call this once on app load to complete a pending redirect sign-in
+export const handleRedirectResult = async () => {
+  if (!auth) return null;
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user ?? null;
+  } catch (error) {
+    console.error("Error handling redirect result:", error);
+    return null;
   }
 };
 

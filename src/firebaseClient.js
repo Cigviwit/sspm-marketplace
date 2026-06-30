@@ -45,3 +45,7 @@ export const logoutUser = (...args) => {
 export const signInWithGoogle = (...args) => {
   return firebase.signInWithGoogle(...args);
 };
+
+export const handleRedirectResult = () => {
+  return firebase.handleRedirectResult();
+};
